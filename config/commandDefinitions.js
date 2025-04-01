@@ -63,7 +63,7 @@ const globalCommands = [
         description: "Your coding question",
         type: ApplicationCommandOptionType.String,
         required: true,
-      },
+      }
     ],
   },
   {
@@ -384,6 +384,33 @@ const globalCommands = [
     integration_types: [1],
     contexts: [0, 1, 2]
   },
+  // Add this to the globalCommands array in commandDefinitions.js
+  {
+    name: "binary",
+    description: "Translate between text and binary",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+    {
+      name: "text",
+      description: "Text to convert to/from binary",
+      type: ApplicationCommandOptionType.String,
+      required: true,
+    },
+    {
+      name: "mode",
+      description: "Conversion mode",
+      type: ApplicationCommandOptionType.String,
+      required: false,
+      choices: [
+        { name: "Text to Binary", value: "encode" },
+        { name: "Binary to Text", value: "decode" }
+      ]
+    }
+  ]
+},
 ];
 
 // guild commands (only available in guilds)

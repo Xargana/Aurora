@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "axios": "^1.8.4",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "ping": "^0.4.4",
+    "whois-json": "^2.0.4",
+    "wikipedia": "^2.1.2"
+  }
+}

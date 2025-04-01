@@ -1,5 +1,5 @@
 const CommandBase = require('../../classes/CommandBase');
-const { version } = require('../../../package.json');
+const { version } = require('../../package.json');
 const os = require('os');
 
 class Info extends CommandBase {

@@ -12,6 +12,7 @@ class Cody extends CommandBase {
     try {
       await this.deferReply(interaction);
       const question = interaction.options.getString("question");
+      let model = interaction.options.getString("model") || null;
       
       if (!process.env.SOURCEGRAPH_API_KEY) {
         await this.sendErrorResponse(interaction, 
@@ -20,26 +21,74 @@ class Cody extends CommandBase {
         return;
       }
       
-      console.log(`Asking Cody: ${question}`);
+      // Log with or without model information
+      if (model) {
+        console.log(`Asking Cody (model: ${model}): ${question}`);
+      } else {
+        console.log(`Asking Cody (default model): ${question}`);
+      }
       
-      // Call Cody API
-      const codyResponse = await Utils.askCody(question);
+      // Initial message to show the question and indicate processing
+      const modelText = model ? ` (${model})` : '';
+      await this.sendResponse(interaction, { 
+        content: `**Question:** ${question}\n\n**Cody's Answer${modelText}:**\n⌛ Thinking...`
+      });
       
-      console.log(`Cody response received: ${codyResponse ? 'yes' : 'no'}`);
+      // Define a stream callback for real-time updates
+      let lastUpdate = Date.now();
+      const updateInterval = 1000; // Update at most once per second to avoid rate limits
       
-      // Format the response
+      const streamCallback = async (currentResponse) => {
+        // Ensure we don't update too frequently
+        const now = Date.now();
+        if (now - lastUpdate < updateInterval) {
+          return;
+        }
+        
+        lastUpdate = now;
+        
+        // Format the current response
+        let formattedResponse = currentResponse || "No response received from Cody yet.";
+        
+        // Calculate total length including the question
+        const fullResponse = `**Question:** ${question}\n\n**Cody's Answer${modelText}:**\n${formattedResponse}`;
+        
+        // If the response is too long for Discord (which has a 2000 character limit)
+        if (fullResponse.length > 1900) {
+          formattedResponse = formattedResponse.substring(0, 1900 - question.length - 100) + 
+            "...\n\n⌛ *Response exceeds Discord limit, still generating...*";
+        }
+        
+        try {
+          // Update the message with the current state of the response
+          await interaction.editReply({ 
+            content: `**Question:** ${question}\n\n**Cody's Answer${modelText}:**\n${formattedResponse}`
+          });
+        } catch (err) {
+          console.error("Error updating message:", err);
+        }
+      };
+      
+      // Call Cody API with streaming
+      const codyResponse = await Utils.askCody(question, model, streamCallback);
+      
+      console.log(`Cody response completed: ${codyResponse ? 'yes' : 'no'}`);
+      
+      // Format the final response
       let formattedResponse = codyResponse || "No response received from Cody.";
       
       // Calculate total length including the question
-      const fullResponse = `**Question:** ${question}\n\n**Cody's Answer:**\n${formattedResponse}`;
+      const fullResponse = `**Question:** ${question}\n\n**Cody's Answer${modelText}:**\n${formattedResponse}`;
       
       // If the response is too long for Discord (which has a 2000 character limit)
       if (fullResponse.length > 1900) {
-        formattedResponse = formattedResponse.substring(0, 1900 - question.length - 50) + "...\n(Response truncated due to Discord's character limit)";
+        formattedResponse = formattedResponse.substring(0, 1900 - question.length - 50) + 
+          "...\n(Response truncated due to Discord's character limit)";
       }
       
-      await this.sendResponse(interaction, { 
-        content: `**Question:** ${question}\n\n**Cody's Answer:**\n${formattedResponse}`
+      // Final update with complete response
+      await interaction.editReply({ 
+        content: `**Question:** ${question}\n\n**Cody's Answer${modelText}:**\n${formattedResponse}`
       });
     } catch (error) {
       console.error("Cody API error:", error);

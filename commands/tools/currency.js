@@ -30,7 +30,7 @@ class Currency extends CommandBase {
       }
       
       // Fetch exchange rates
-      const apiUrl = `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_RATE_API_KEY}/latest/${fromCurrency}`;
+      const apiUrl = `https://blahaj.tr:2589/exchange-rate/convert/${process.env.EXCHANGE_RATE_API_KEY}/latest/${fromCurrency}`;
       const response = await axios.get(apiUrl);
       
       // Check if the source currency is valid

@@ -15,43 +15,26 @@ class Currency extends CommandBase {
       const fromCurrency = interaction.options.getString("from").toUpperCase();
       const toCurrency = interaction.options.getString("to").toUpperCase();
       
-      // Check if API key is configured
-      if (!process.env.EXCHANGE_RATE_API_KEY) {
-        await this.sendErrorResponse(interaction, 
-          "Exchange Rate API key not configured. Please add EXCHANGE_RATE_API_KEY to your environment variables."
-        );
-        return;
-      }
-      
       // Validate amount
       if (amount <= 0) {
         await this.sendErrorResponse(interaction, "Please provide a positive amount to convert.");
         return;
       }
       
-      // Fetch exchange rates
-      const apiUrl = `https://blahaj.tr:2589/exchange-rate/convert/${fromCurrency}`;
+      // Fetch exchange rates using the new API endpoint
+      const apiUrl = `https://blahaj.tr:2589/exchange-rate/convert/${fromCurrency}/${toCurrency}/${amount}`;
       const response = await axios.get(apiUrl);
       
-      // Check if the source currency is valid
-      if (response.data.result === "error") {
+      // Check if the request was successful
+      if (response.data.result !== 'success') {
         await this.sendErrorResponse(interaction, 
-          `Error: ${response.data.error-type || "Invalid request"}. Please check your currency codes.`
+          `Error: ${response.data.error || "Invalid request"}. Please check your currency codes.`
         );
         return;
       }
       
-      // Check if target currency exists in the response
-      if (!response.data.conversion_rates[toCurrency]) {
-        await this.sendErrorResponse(interaction, 
-          `Could not find exchange rate for ${toCurrency}. Please check your currency code.`
-        );
-        return;
-      }
-      
-      // Calculate the converted amount
-      const rate = response.data.conversion_rates[toCurrency];
-      const convertedAmount = amount * rate;
+      // Get the conversion data
+      const { convertedAmount, rate, lastUpdated, nextUpdate } = response.data;
       
       // Format numbers with proper separators and decimals
       const formatNumber = (num) => {
@@ -80,6 +63,10 @@ class Currency extends CommandBase {
       const fromCurrencyInfo = currencyInfo[fromCurrency] || { symbol: '', name: fromCurrency };
       const toCurrencyInfo = currencyInfo[toCurrency] || { symbol: '', name: toCurrency };
       
+      // Format dates
+      const lastUpdatedDate = new Date(lastUpdated);
+      const nextUpdateDate = new Date(nextUpdate);
+      
       // Create a rich embed
       const conversionEmbed = {
         title: "Currency Conversion",
@@ -102,12 +89,17 @@ class Currency extends CommandBase {
           },
           {
             name: "Last Updated",
-            value: new Date(response.data.time_last_update_unix * 1000).toLocaleString(),
+            value: lastUpdatedDate.toLocaleString(),
+            inline: true
+          },
+          {
+            name: "Next Update",
+            value: nextUpdateDate.toLocaleString(),
             inline: true
           }
         ],
         footer: {
-          text: "Powered by ExchangeRate-API"
+          text: "Powered by blahaj.tr Exchange Rate API"
         },
         timestamp: new Date()
       };

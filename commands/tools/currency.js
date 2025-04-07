@@ -30,7 +30,7 @@ class Currency extends CommandBase {
       }
       
       // Fetch exchange rates
-      const apiUrl = `https://blahaj.tr:2589/exchange-rate/convert/${process.env.EXCHANGE_RATE_API_KEY}/latest/${fromCurrency}`;
+      const apiUrl = `https://blahaj.tr:2589/exchange-rate/convert/${fromCurrency}`;
       const response = await axios.get(apiUrl);
       
       // Check if the source currency is valid
@@ -68,6 +68,12 @@ class Currency extends CommandBase {
         GBP: { symbol: '£', name: 'British Pound' },
         JPY: { symbol: '¥', name: 'Japanese Yen' },
         TRY: { symbol: '₺', name: 'Turkish Lira' },
+        SEK: { symbol: 'kr', name: 'Swedish Krona' },
+        INR: { symbol: '₹', name: 'Indian Rupee' },
+        BRL: { symbol: 'R$', name: 'Brazilian Real' },
+        CNY: { symbol: '¥', name: 'Chinese Yuan' },
+        RUB: { symbol: '₽', name: 'Russian Ruble' },
+        PLN: { symbol: 'zł', name: 'Polish Złoty' },
         // Add more currencies as needed
       };
       

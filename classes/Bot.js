@@ -178,6 +178,81 @@ class Bot {
       }
     }
   }
+
+  // Add this new method to the Bot class
+  async sendShutdownNotification(reason, error = null) {
+  // Create shutdown embed
+  const shutdownEmbed = {
+    title: "Bot Shutdown Notification",
+    description: `Bot is shutting down at <t:${Math.floor(Date.now() / 1000)}:F>`,
+    color: 0xFF0000, // Red color for shutdown
+    fields: [
+      {
+        name: "Bot Name",
+        value: this.client?.user?.tag || "Unknown (Client unavailable)",
+        inline: true
+      },
+      {
+        name: "Shutdown Reason",
+        value: reason || "Unknown reason",
+        inline: true
+      },
+      {
+        name: "Relative Time",
+        value: `<t:${Math.floor(Date.now() / 1000)}:R>`,
+        inline: true
+      }
+    ],
+    footer: {
+      text: "Aurora - Shutdown Event"
+    },
+    timestamp: new Date()
+  };
+  
+  // Add error details if available
+  if (error) {
+    shutdownEmbed.fields.push({
+      name: "Error Details",
+      value: `\`\`\`\n${error.message || String(error).substring(0, 1000)}\n\`\`\``,
+      inline: false
+    });
+  }
+  
+  // Only attempt notifications if client is ready
+  if (this.client?.isReady()) {
+    // Notify owner via DM if OWNER_ID is set
+    if (process.env.OWNER_ID) {
+      try {
+        const ownerId = process.env.OWNER_ID;
+        const owner = await this.client.users.fetch(ownerId);
+        await owner.send({ embeds: [shutdownEmbed] });
+        console.log(`Sent shutdown notification to owner: ${owner.tag}`);
+      } catch (notifyError) {
+        console.error("Failed to send shutdown notification to owner:", notifyError);
+      }
+    }
+    
+    // Notify in a specific channel if STARTUP_CHANNEL_ID is set
+    if (process.env.STARTUP_CHANNEL_ID) {
+      try {
+        const channelId = process.env.STARTUP_CHANNEL_ID;
+        const channel = await this.client.channels.fetch(channelId);
+        
+        if (channel && channel.isTextBased()) {
+          await channel.send({ embeds: [shutdownEmbed] });
+          console.log(`Sent shutdown notification to channel: ${channel.name} (${channel.id})`);
+        } else {
+          console.error(`Could not find channel with ID: ${channelId} or it's not a text channel`);
+        }
+      } catch (notifyError) {
+        console.error(`Failed to send shutdown notification to channel (${process.env.STARTUP_CHANNEL_ID}):`, notifyError);
+      }
+    }
+  } else {
+    console.log("Client not ready, cannot send shutdown notifications");
+  }
+}
+
   
   async start() {
     // Login to Discord

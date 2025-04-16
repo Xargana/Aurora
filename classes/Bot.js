@@ -119,19 +119,42 @@ class Bot {
     if (process.env.STARTUP_CHANNEL_ID) {
       try {
         const channelId = process.env.STARTUP_CHANNEL_ID;
-        const channel = await this.client.channels.fetch(channelId);
+        console.log(`Attempting to send notification to channel ID: ${channelId}`);
         
-        if (channel) {
-          await channel.send({ embeds: [startupEmbed] });
-          console.log(`Sent startup notification to channel: ${channel.name} (${channel.id})`);
-        } else {
-          console.error(`Could not find channel with ID: ${channelId}`);
+        // More detailed error handling for channel fetch
+        let channel;
+        try {
+          channel = await this.client.channels.fetch(channelId);
+          console.log(`Successfully fetched channel: ${channel?.name || 'Unknown'} (${channel?.id || 'No ID'})`);
+        } catch (fetchError) {
+          console.error(`Error fetching channel: ${fetchError.message}`);
+          return;
         }
+        
+        if (!channel) {
+          console.error(`Could not find channel with ID: ${channelId}`);
+          return;
+        }
+        
+        // Check permissions
+        if (channel.isTextBased && channel.permissionsFor && 
+            channel.permissionsFor(this.client.user)?.has('SendMessages') === false) {
+          console.error(`Bot does not have permission to send messages in channel: ${channel.name} (${channel.id})`);
+          return;
+        }
+        
+        // Send the message
+        await channel.send({ embeds: [startupEmbed] });
+        console.log(`Sent startup notification to channel: ${channel.name} (${channel.id})`);
       } catch (error) {
         console.error(`Failed to send startup notification to channel (${process.env.STARTUP_CHANNEL_ID}):`, error);
+        console.error(`Error stack: ${error.stack}`);
       }
+    } else {
+      console.log("STARTUP_CHANNEL_ID not set, skipping channel notification");
     }
   }
+  
   
   async notifyOwnerOfGuildJoin(guild) {
     if (process.env.OWNER_ID) {

@@ -109,43 +109,7 @@ class Info extends CommandBase {
         }
       }
       
-      // Add the additional stats embed below the main info embed
-      const statsEmbed = {
-        title: "Bot Statistics",
-        color: 0x7289DA,
-        fields: [
-          {
-            name: "Bot Info",
-            value: [
-              `**Servers:** ${serverCount}`,
-              `**Users:** ${userCount}`,
-              `**Channels:** ${channelCount}`,
-              `**Commands:** ${this.client.application.commands.cache.size || "Loading..."}`
-            ].join('\n'),
-            inline: true
-          },
-          {
-            name: "System Info",
-            value: [
-              `**Platform:** ${os.platform()}`,
-              `**Memory Usage:** ${memoryUsedMB}MB`,
-              `**CPU Load:** ${cpuLoad[0].toFixed(2)}%`,
-              `**Node.js:** ${process.version}`
-            ].join('\n'),
-            inline: true
-          },
-          {
-            name: "Uptime",
-            value: `${botDays}d ${botHours}h ${botMinutes}m`,
-            inline: true
-          }
-        ],
-        timestamp: new Date(),
-        footer: { text: "Aurora" }
-      };
-      
-      // Send both embeds
-      await this.sendResponse(interaction, { embeds: [infoEmbed, statsEmbed] });
+      await this.sendResponse(interaction, { embeds: [infoEmbed] });
     } catch (error) {
       console.error("Error in info command:", error);
       await this.sendErrorResponse(interaction, "An error occurred while fetching bot information.");

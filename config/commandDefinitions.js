@@ -35,7 +35,7 @@ const globalCommands = [
     ],
   },
   {
-    name: "server_status",
+    name: "status",
     description: "Fetches data from an API",
     type: ApplicationCommandType.ChatInput,
     dm_permission: true,
@@ -228,14 +228,6 @@ const globalCommands = [
     ]
   },
   {
-    name: "stats",
-    description: "Show bot and server statistics",
-    type: ApplicationCommandType.ChatInput,
-    dm_permission: true,
-    integration_types: [1],
-    contexts: [0, 1, 2]
-  },
-  {
     name: "checkport",
     description: "Check if specific ports are open on a domain",
     type: ApplicationCommandType.ChatInput,
@@ -294,7 +286,6 @@ const globalCommands = [
     description: "Look up a term on Urban Dictionary",
     type: ApplicationCommandType.ChatInput,
     dm_permission: true,
-    nsfw: true,
     integration_types: [1],
     contexts: [0, 1, 2],
     options: [
@@ -384,7 +375,6 @@ const globalCommands = [
     integration_types: [1],
     contexts: [0, 1, 2]
   },
-  // Add this to the globalCommands array in commandDefinitions.js
   {
     name: "binary",
     description: "Translate between text and binary",

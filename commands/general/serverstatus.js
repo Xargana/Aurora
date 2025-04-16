@@ -4,7 +4,7 @@ const axios = require('axios');
 class ServerStatus extends CommandBase {
   constructor(client) {
     super(client);
-    this.name = 'server_status';
+    this.name = 'status';
     this.description = 'Fetches server status data';
     this.cooldown = 5; // Set a 5 second cooldown
   }

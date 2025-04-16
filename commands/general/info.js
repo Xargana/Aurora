@@ -13,15 +13,25 @@ class Info extends CommandBase {
     try {
       await this.deferReply(interaction);
       
-      // Calculate uptime
-      const uptime = process.uptime();
-      const days = Math.floor(uptime / 86400);
-      const hours = Math.floor((uptime % 86400) / 3600);
-      const minutes = Math.floor((uptime % 3600) / 60);
-      const seconds = Math.floor(uptime % 60);
+      // Calculate bot uptime
+      const botUptime = process.uptime();
+      const botDays = Math.floor(botUptime / 86400);
+      const botHours = Math.floor((botUptime % 86400) / 3600);
+      const botMinutes = Math.floor((botUptime % 3600) / 60);
+      const botSeconds = Math.floor(botUptime % 60);
       
-      // Format uptime string
-      const uptimeString = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      // Format bot uptime string
+      const botUptimeString = `${botDays}d ${botHours}h ${botMinutes}m ${botSeconds}s`;
+      
+      // Calculate system uptime
+      const sysUptime = os.uptime();
+      const sysDays = Math.floor(sysUptime / 86400);
+      const sysHours = Math.floor((sysUptime % 86400) / 3600);
+      const sysMinutes = Math.floor((sysUptime % 3600) / 60);
+      const sysSeconds = Math.floor(sysUptime % 60);
+      
+      // Format system uptime string
+      const sysUptimeString = `${sysDays}d ${sysHours}h ${sysMinutes}m ${sysSeconds}s`;
       
       // Get memory usage
       const memoryUsage = process.memoryUsage();
@@ -47,7 +57,7 @@ class Info extends CommandBase {
               `**Servers:** ${serverCount}`,
               `**Users:** ${userCount}`,
               `**Commands:** ${this.client.application.commands.cache.size || "Loading..."}`,
-              `**Uptime:** ${uptimeString}`
+              `**Bot Uptime:** ${botUptimeString}`
             ].join('\n'),
             inline: true
           },
@@ -57,7 +67,8 @@ class Info extends CommandBase {
               `**Platform:** ${os.platform()} ${os.release()}`,
               `**Memory:** ${memoryUsedMB}MB / ${memoryTotalMB}MB`,
               `**Node.js:** ${process.version}`,
-              `**Bot Version:** ${version || "1.0.0"}`
+              `**Bot Version:** ${version || "1.0.0"}`,
+              `**System Uptime:** ${sysUptimeString}`
             ].join('\n'),
             inline: true
           },

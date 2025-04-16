@@ -81,34 +81,54 @@ class Bot {
   }
   
   async sendStartupNotification() {
+    // Create startup embed
+    const startupEmbed = {
+      title: "Bot Status Update",
+      description: `Bot started successfully at <t:${Math.floor(Date.now() / 1000)}:F>`,
+      color: 0x00ff00,
+      fields: [
+        {
+          name: "Bot Name",
+          value: this.client.user.tag,
+          inline: true
+        },
+        {
+          name: "Relative Time",
+          value: `<t:${Math.floor(Date.now() / 1000)}:R>`,
+          inline: true
+        }
+      ],
+      footer: {
+        text: "Aurora"
+      }
+    };
+    
+    // Notify owner via DM if OWNER_ID is set
     if (process.env.OWNER_ID) {
       try {
         const ownerId = process.env.OWNER_ID;
         const owner = await this.client.users.fetch(ownerId);
-        const startupEmbed = {
-          title: "Bot Status Update",
-          description: `Bot started successfully at <t:${Math.floor(Date.now() / 1000)}:F>`,
-          color: 0x00ff00,
-          fields: [
-            {
-              name: "Bot Name",
-              value: this.client.user.tag,
-              inline: true
-            },
-            {
-              name: "Relative Time",
-              value: `<t:${Math.floor(Date.now() / 1000)}:R>`,
-              inline: true
-            }
-          ],
-          footer: {
-            text: "Aurora"
-          }
-        };
-        
         await owner.send({ embeds: [startupEmbed] });
+        console.log(`Sent startup notification to owner: ${owner.tag}`);
       } catch (error) {
-        console.error("Failed to send startup notification:", error);
+        console.error("Failed to send startup notification to owner:", error);
+      }
+    }
+    
+    // Notify in a specific channel if STARTUP_CHANNEL_ID is set
+    if (process.env.STARTUP_CHANNEL_ID) {
+      try {
+        const channelId = process.env.STARTUP_CHANNEL_ID;
+        const channel = await this.client.channels.fetch(channelId);
+        
+        if (channel) {
+          await channel.send({ embeds: [startupEmbed] });
+          console.log(`Sent startup notification to channel: ${channel.name} (${channel.id})`);
+        } else {
+          console.error(`Could not find channel with ID: ${channelId}`);
+        }
+      } catch (error) {
+        console.error(`Failed to send startup notification to channel (${process.env.STARTUP_CHANNEL_ID}):`, error);
       }
     }
   }

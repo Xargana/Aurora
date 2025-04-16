@@ -38,9 +38,13 @@ class Info extends CommandBase {
       const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
       const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
       
-      // Get server count
+      // Get CPU load (from stats.js)
+      const cpuLoad = os.loadavg();
+      
+      // Get server count and additional stats from stats.js
       const serverCount = this.client.guilds.cache.size;
       const userCount = this.client.users.cache.size;
+      const channelCount = this.client.channels.cache.size;
       
       // Create embed
       const infoEmbed = {
@@ -56,6 +60,7 @@ class Info extends CommandBase {
             value: [
               `**Servers:** ${serverCount}`,
               `**Users:** ${userCount}`,
+              `**Channels:** ${channelCount}`,
               `**Commands:** ${this.client.application.commands.cache.size || "Loading..."}`,
               `**Bot Uptime:** ${botUptimeString}`
             ].join('\n'),
@@ -66,6 +71,7 @@ class Info extends CommandBase {
             value: [
               `**Platform:** ${os.platform()} ${os.release()}`,
               `**Memory:** ${memoryUsedMB}MB / ${memoryTotalMB}MB`,
+              `**CPU Load:** ${cpuLoad[0].toFixed(2)}%`,
               `**Node.js:** ${process.version}`,
               `**Bot Version:** ${version || "1.0.0"}`,
               `**System Uptime:** ${sysUptimeString}`
@@ -103,7 +109,43 @@ class Info extends CommandBase {
         }
       }
       
-      await this.sendResponse(interaction, { embeds: [infoEmbed] });
+      // Add the additional stats embed below the main info embed
+      const statsEmbed = {
+        title: "Bot Statistics",
+        color: 0x7289DA,
+        fields: [
+          {
+            name: "Bot Info",
+            value: [
+              `**Servers:** ${serverCount}`,
+              `**Users:** ${userCount}`,
+              `**Channels:** ${channelCount}`,
+              `**Commands:** ${this.client.application.commands.cache.size || "Loading..."}`
+            ].join('\n'),
+            inline: true
+          },
+          {
+            name: "System Info",
+            value: [
+              `**Platform:** ${os.platform()}`,
+              `**Memory Usage:** ${memoryUsedMB}MB`,
+              `**CPU Load:** ${cpuLoad[0].toFixed(2)}%`,
+              `**Node.js:** ${process.version}`
+            ].join('\n'),
+            inline: true
+          },
+          {
+            name: "Uptime",
+            value: `${botDays}d ${botHours}h ${botMinutes}m`,
+            inline: true
+          }
+        ],
+        timestamp: new Date(),
+        footer: { text: "Aurora" }
+      };
+      
+      // Send both embeds
+      await this.sendResponse(interaction, { embeds: [infoEmbed, statsEmbed] });
     } catch (error) {
       console.error("Error in info command:", error);
       await this.sendErrorResponse(interaction, "An error occurred while fetching bot information.");

@@ -36,7 +36,7 @@ const globalCommands = [
   },
   {
     name: "status",
-    description: "Fetches data from an API",
+    description: "Fetches server status data",
     type: ApplicationCommandType.ChatInput,
     dm_permission: true,
     integration_types: [1],

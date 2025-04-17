@@ -32,7 +32,11 @@ class ServerStatus extends CommandBase {
       if (serversData["blahaj.tr"]) {
         const localServer = serversData["blahaj.tr"];
         const status = localServer.online ? "🟢 Online" : "🔴 Offline";
-        const responseTime = localServer.responseTime ? `${localServer.responseTime.toFixed(2)}ms` : "N/A";
+        const responseTime = localServer.responseTime 
+          ? (localServer.responseTime === "unknown" || typeof localServer.responseTime !== "number"
+             ? "Unknown" 
+             : `${localServer.responseTime.toFixed(2)}ms`)
+          : "Timed out";
         
         fields.push({
           name: "📍 Local Server",
@@ -53,7 +57,11 @@ class ServerStatus extends CommandBase {
         
         for (const [server, data] of remoteServers) {
           const status = data.online ? "🟢 Online" : "🔴 Offline";
-          const responseTime = data.responseTime ? `${data.responseTime.toFixed(2)}ms` : "N/A";
+          const responseTime = data.responseTime 
+            ? (data.responseTime === "unknown" || typeof data.responseTime !== "number"
+               ? "Unknown" 
+               : `${data.responseTime.toFixed(2)}ms`)
+            : "Timed out";
           
           fields.push({
             name: server,

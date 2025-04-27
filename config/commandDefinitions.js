@@ -490,6 +490,143 @@ const globalCommands = [
     }
   ]
 },
+  {
+    name: "github",
+    description: "Fetch information from GitHub",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "type",
+        description: "Type of GitHub information to fetch",
+        type: ApplicationCommandOptionType.String,
+        required: true,
+        choices: [
+          { name: "User", value: "user" },
+          { name: "Repository", value: "repo" },
+          { name: "Organization", value: "org" }
+        ]
+      },
+      {
+        name: "query",
+        description: "Username, repository name (owner/repo), or organization name",
+        type: ApplicationCommandOptionType.String,
+        required: true
+      }
+    ]
+  },
+  {
+    name: "spotify",
+    description: "Search for music on Spotify",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "query",
+        description: "Song, artist, or album to search for",
+        type: ApplicationCommandOptionType.String,
+        required: true
+      },
+      {
+        name: "type",
+        description: "Type of content to search for",
+        type: ApplicationCommandOptionType.String,
+        required: false,
+        choices: [
+          { name: "Track", value: "track" },
+          { name: "Album", value: "album" },
+          { name: "Artist", value: "artist" },
+          { name: "Playlist", value: "playlist" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "dictionary",
+    description: "Look up a word definition",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "word",
+        description: "The word to look up",
+        type: ApplicationCommandOptionType.String,
+        required: true
+      },
+      {
+        name: "language",
+        description: "Dictionary language (default: English)",
+        type: ApplicationCommandOptionType.String,
+        required: false,
+        choices: [
+          { name: "English", value: "en" },
+          { name: "Spanish", value: "es" },
+          { name: "French", value: "fr" },
+          { name: "German", value: "de" },
+          { name: "Italian", value: "it" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "translate",
+    description: "Translate text between languages",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "text",
+        description: "The text to translate",
+        type: ApplicationCommandOptionType.String,
+        required: true
+      },
+      {
+        name: "to",
+        description: "Target language",
+        type: ApplicationCommandOptionType.String,
+        required: true,
+        choices: [
+          { name: "English", value: "en" },
+          { name: "Spanish", value: "es" },
+          { name: "French", value: "fr" },
+          { name: "German", value: "de" },
+          { name: "Italian", value: "it" },
+          { name: "Japanese", value: "ja" },
+          { name: "Russian", value: "ru" },
+          { name: "Chinese", value: "zh" },
+          { name: "Arabic", value: "ar" },
+          { name: "Turkish", value: "tr" }
+        ]
+      },
+      {
+        name: "from",
+        description: "Source language (auto-detect if not specified)",
+        type: ApplicationCommandOptionType.String,
+        required: false,
+        choices: [
+          { name: "Auto-detect", value: "auto" },
+          { name: "English", value: "en" },
+          { name: "Spanish", value: "es" },
+          { name: "French", value: "fr" },
+          { name: "German", value: "de" },
+          { name: "Italian", value: "it" },
+          { name: "Japanese", value: "ja" },
+          { name: "Russian", value: "ru" },
+          { name: "Chinese", value: "zh" },
+          { name: "Arabic", value: "ar" },
+          { name: "Turkish", value: "tr" }
+        ]
+      }
+    ]
+  }
 ];
 
 // guild commands (only available in guilds)

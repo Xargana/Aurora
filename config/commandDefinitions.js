@@ -368,6 +368,95 @@ const globalCommands = [
     ],
   },
   {
+    name: "mcserver",
+    description: "Find and view Minecraft servers",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "search",
+        description: "Search for Minecraft servers with specific criteria",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: "version",
+            description: "Server version (e.g. 1.19.2)",
+            type: ApplicationCommandOptionType.String,
+            required: false,
+          },
+          {
+            name: "playercount",
+            description: "Player count (e.g. >10, <=5, 11-20)",
+            type: ApplicationCommandOptionType.String,
+            required: false,
+          },
+          {
+            name: "country",
+            description: "Country code (e.g. US, DE)",
+            type: ApplicationCommandOptionType.String,
+            required: false,
+          },
+          {
+            name: "page",
+            description: "Page number for results",
+            type: ApplicationCommandOptionType.Integer,
+            required: false,
+            min_value: 1
+          }
+        ]
+      },
+      {
+        name: "random",
+        description: "Get a random online Minecraft server",
+        type: ApplicationCommandOptionType.Subcommand
+      },
+      {
+        name: "ping",
+        description: "Get information about a specific Minecraft server",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: "ip",
+            description: "Server IP address",
+            type: ApplicationCommandOptionType.String,
+            required: true,
+          },
+          {
+            name: "port",
+            description: "Server port (default: 25565)",
+            type: ApplicationCommandOptionType.Integer,
+            required: false,
+            min_value: 1,
+            max_value: 65535
+          }
+        ]
+      },
+      {
+        name: "bedrock",
+        description: "Get information about a Bedrock Minecraft server",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: "ip",
+            description: "Bedrock server IP address",
+            type: ApplicationCommandOptionType.String,
+            required: true,
+          },
+          {
+            name: "port",
+            description: "Server port (default: 19132)",
+            type: ApplicationCommandOptionType.Integer,
+            required: false,
+            min_value: 1,
+            max_value: 65535
+          }
+        ]
+      }
+    ],
+  },
+  {
     name: "info",
     description: "Display information about the bot",
     type: ApplicationCommandType.ChatInput,

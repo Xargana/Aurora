@@ -1,5 +1,5 @@
 const { ApplicationCommandOptionType } = require('discord.js');
-const CommandBase = require('../CommandBase');
+const CommandBase = require('../../classes/CommandBase');
 const MinecraftAPIUtils = require('../../classes/MinecraftAPIUtils');
 
 class MCServer extends CommandBase {

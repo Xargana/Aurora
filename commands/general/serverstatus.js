@@ -13,7 +13,7 @@ class ServerStatus extends CommandBase {
     try {
       await this.deferReply(interaction);
       const isRaw = interaction.options.getBoolean("raw") ?? false;
-      const response = await axios.get("https://blahaj.tr:2589/status");
+      const response = await axios.get("https://xargana.tr:2589/status");
       
       if (isRaw) {
         await this.sendResponse(interaction, {
@@ -29,8 +29,8 @@ class ServerStatus extends CommandBase {
       const fields = [];
       
       // Add local server section if it exists
-      if (serversData["blahaj.tr"]) {
-        const localServer = serversData["blahaj.tr"];
+      if (serversData["xargana.tr"]) {
+        const localServer = serversData["xargana.tr"];
         const status = localServer.online ? "🟢 Online" : "🔴 Offline";
         const responseTime = localServer.responseTime 
           ? (localServer.responseTime === "unknown" || typeof localServer.responseTime !== "number"
@@ -46,7 +46,7 @@ class ServerStatus extends CommandBase {
       }
       
       // Add remote servers section
-      const remoteServers = Object.entries(serversData).filter(([server]) => server !== "blahaj.tr");
+      const remoteServers = Object.entries(serversData).filter(([server]) => server !== "xargana.tr");
       
       if (remoteServers.length > 0) {
         fields.push({

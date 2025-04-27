@@ -22,7 +22,7 @@ class Currency extends CommandBase {
       }
       
       // Fetch exchange rates using the new API endpoint
-      const apiUrl = `https://blahaj.tr:2589/exchange-rate/convert/${fromCurrency}/${toCurrency}/${amount}`;
+      const apiUrl = `https://xargana.tr:2589/exchange-rate/convert/${fromCurrency}/${toCurrency}/${amount}`;
       const response = await axios.get(apiUrl);
       
       // Check if the request was successful
@@ -99,7 +99,7 @@ class Currency extends CommandBase {
           }
         ],
         footer: {
-          text: "Powered by blahaj.tr Exchange Rate API"
+          text: "Powered by xargana.tr Exchange Rate API"
         },
         timestamp: new Date()
       };

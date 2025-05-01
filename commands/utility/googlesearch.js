@@ -49,7 +49,8 @@ class GoogleSearch extends CommandBase {
         color: 0x4285F4, // Google blue
         fields: searchResults.map((result, index) => ({
           name: `${index + 1}. ${result.title}`,
-          value: `[${result.link}](${result.link})\n${result.snippet || 'No description available'}`
+          value: `${result.link}\n${result.snippet || 'No description available'}`,
+          inline: true
         })),
         footer: {
           text: "Google Search"

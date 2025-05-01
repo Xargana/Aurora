@@ -31,17 +31,6 @@ const globalCommands = [
         description: 'What you want to search for',
         type: 3, // STRING type
         required: true
-      },
-      {
-        name: 'safe',
-        description: 'SafeSearch setting',
-        type: 3, // STRING type
-        required: false,
-        choices: [
-          { name: 'Off', value: 'off' },
-          { name: 'Moderate', value: 'moderate' },
-          { name: 'High', value: 'high' }
-        ]
       }
     ]
   },

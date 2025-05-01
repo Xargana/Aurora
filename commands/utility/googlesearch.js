@@ -12,7 +12,6 @@ class GoogleSearch extends CommandBase {
     try {
       await this.deferReply(interaction);
       const query = interaction.options.getString("query");
-      const safeSearch = interaction.options.getString("safe") || "moderate";
       
       // Get API keys from environment variables
       const apiKey = process.env.GOOGLE_API_KEY;
@@ -27,12 +26,11 @@ class GoogleSearch extends CommandBase {
       // Initialize Google Custom Search
       const customsearch = google.customsearch('v1');
       
-      // Perform the search
+      // Perform the search without safe parameter
       const response = await customsearch.cse.list({
         auth: apiKey,
         cx: searchEngineId,
         q: query,
-        safe: safeSearch,
         num: 5 // Number of results to return
       });
       

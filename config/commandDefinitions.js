@@ -19,6 +19,29 @@ const globalCommands = [
     ],
   },
   {
+    name: 'search',
+    description: 'Search the web using Google',
+    options: [
+      {
+        name: 'query',
+        description: 'What you want to search for',
+        type: 3, // STRING type
+        required: true
+      },
+      {
+        name: 'safe',
+        description: 'SafeSearch setting',
+        type: 3, // STRING type
+        required: false,
+        choices: [
+          { name: 'Off', value: 'off' },
+          { name: 'Moderate', value: 'moderate' },
+          { name: 'High', value: 'high' }
+        ]
+      }
+    ]
+  },
+  {
     name: "ping",
     description: "Pings a remote server.",
     type: ApplicationCommandType.ChatInput,

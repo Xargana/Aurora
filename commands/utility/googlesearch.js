@@ -1,4 +1,5 @@
 const { google } = require('googleapis');
+const CommandBase = require('../../classes/CommandBase');
 
 class GoogleSearch extends CommandBase {
   constructor(client) {

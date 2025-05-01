@@ -21,6 +21,10 @@ const globalCommands = [
   {
     name: 'search',
     description: 'Search the web using Google',
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
     options: [
       {
         name: 'query',

@@ -26,7 +26,7 @@ class GoogleSearch extends CommandBase {
       // Initialize Google Custom Search
       const customsearch = google.customsearch('v1');
       
-      // Perform the search without safe parameter
+      // Perform the search
       const response = await customsearch.cse.list({
         auth: apiKey,
         cx: searchEngineId,
@@ -49,8 +49,8 @@ class GoogleSearch extends CommandBase {
         color: 0x4285F4, // Google blue
         fields: searchResults.map((result, index) => ({
           name: `${index + 1}. ${result.title}`,
-          value: `${result.link}\n${result.snippet || 'No description available'}`,
-          inline: true
+          // Just show the URL directly without any markdown formatting
+          value: `${result.snippet || 'No description available'}\n${result.link}`
         })),
         footer: {
           text: "Google Search"

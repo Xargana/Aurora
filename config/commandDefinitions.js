@@ -18,6 +18,35 @@ const globalCommands = [
       },
     ],
   },
+  // Add this to the globalCommands array in config/commandDefinitions.js
+  {
+    name: "uuid",
+    description: "Generate a UUID (Universally Unique Identifier)",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "version",
+        description: "The UUID version to generate",
+        type: ApplicationCommandOptionType.String,
+        required: false,
+        choices: [
+          { name: "v1 (time-based)", value: "v1" },
+          { name: "v4 (random)", value: "v4" }
+        ]
+      },
+      {
+        name: "count",
+        description: "Number of UUIDs to generate (max 10)",
+        type: ApplicationCommandOptionType.Integer,
+        required: false,
+        min_value: 1,
+        max_value: 10
+      }
+    ],
+  },
   {
     name: 'search',
     description: 'Search the web using Google',

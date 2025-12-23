@@ -671,6 +671,34 @@ const globalCommands = [
         ]
       }
     ]
+  },
+  {
+    name: "gif",
+    description: "Convert images or videos to GIF format using ffmpeg",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "file",
+        description: "Image (PNG, JPG, BMP, WebP) or video (MP4, AVI, MOV, MKV, FLV, WMV, WebM) to convert",
+        type: ApplicationCommandOptionType.Attachment,
+        required: false
+      },
+      {
+        name: "url",
+        description: "URL of an image or video to convert",
+        type: ApplicationCommandOptionType.String,
+        required: false
+      },
+      {
+        name: "rename-only",
+        description: "For images only: rename to .gif without re-encoding",
+        type: ApplicationCommandOptionType.Boolean,
+        required: false
+      }
+    ]
   }
 ];
 
@@ -689,8 +717,20 @@ const userCommands = [
   },
 ];
 
+// Message context menu commands (should also be registered globally)
+// message > apps > {command}
+const messageCommands = [
+  {
+    name: "Convert to GIF",
+    type: ApplicationCommandType.Message,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+  },
+];
+
 module.exports = {
   globalCommands,
   guildCommands,
-  userCommands
+  userCommands,
+  messageCommands
 };

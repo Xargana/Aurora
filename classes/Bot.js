@@ -26,6 +26,9 @@ class Bot {
     // Setup temp directory
     this.setupTempDirectory();
     
+    // Setup periodic cleanup
+    this.setupPeriodicCleanup();
+    
     // Setup event handlers
     this.setupEventHandlers();
   }
@@ -40,6 +43,56 @@ class Bot {
       }
     } else {
       fs.mkdirSync(tempDir, { recursive: true });
+    }
+  }
+  
+  setupPeriodicCleanup() {
+    // Run cleanup every 10 minutes
+    setInterval(() => {
+      this.cleanupOldTempDirs();
+    }, 10 * 60 * 1000);
+  }
+  
+  cleanupOldTempDirs() {
+    const baseDir = path.join(__dirname, '../../');
+    const now = Date.now();
+    const maxAge = 15 * 60 * 1000; // 15 minutes old
+    
+    try {
+      const files = fs.readdirSync(baseDir);
+      
+      for (const file of files) {
+        if (file.startsWith('temp_gif_')) {
+          const filePath = path.join(baseDir, file);
+          const stat = fs.statSync(filePath);
+          
+          // If directory is older than 15 minutes, delete it
+          if (now - stat.mtimeMs > maxAge) {
+            this.deleteRecursive(filePath);
+            console.log(`[Cleanup] Removed old temp directory: ${file}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`[Cleanup] Error during periodic cleanup: ${error.message}`);
+    }
+  }
+  
+  deleteRecursive(dirPath) {
+    try {
+      if (fs.existsSync(dirPath)) {
+        fs.readdirSync(dirPath).forEach((file) => {
+          const filePath = path.join(dirPath, file);
+          if (fs.lstatSync(filePath).isDirectory()) {
+            this.deleteRecursive(filePath);
+          } else {
+            fs.unlinkSync(filePath);
+          }
+        });
+        fs.rmdirSync(dirPath);
+      }
+    } catch (error) {
+      console.error(`[Cleanup] Error deleting directory: ${error.message}`);
     }
   }
   
@@ -81,6 +134,12 @@ class Bot {
   }
   
   async sendStartupNotification() {
+    // Skip notifications in dev environment
+    if (process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true') {
+      console.log('Dev environment detected, skipping startup notification');
+      return;
+    }
+
     // Create startup embed
     const startupEmbed = {
       title: "Bot Status Update",
@@ -181,8 +240,14 @@ class Bot {
 
   // Add this new method to the Bot class
   async sendShutdownNotification(reason, error = null) {
-  // Create shutdown embed
-  const shutdownEmbed = {
+    // Skip notifications in dev environment
+    if (process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true') {
+      console.log('Dev environment detected, skipping shutdown notification');
+      return;
+    }
+
+    // Create shutdown embed
+    const shutdownEmbed = {
     title: "Bot Shutdown Notification",
     description: `Bot is shutting down at <t:${Math.floor(Date.now() / 1000)}:F>`,
     color: 0xFF0000, // Red color for shutdown

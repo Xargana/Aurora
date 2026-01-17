@@ -1,6 +1,7 @@
 const { REST, Routes } = require("discord.js");
 const fs = require('fs');
 const path = require('path');
+const rateLimiter = require('./rateLimiter');
 
 class CommandManager {
   constructor(client) {
@@ -195,6 +196,21 @@ class CommandManager {
       if (interaction.isChatInputCommand()) {
         const command = this.commands.get(interaction.commandName);
         if (command) {
+          // Check rate limit before executing
+          const userId = interaction.user.id;
+          const { isLimited, remainingTime } = rateLimiter.isRateLimited(
+            userId,
+            command.name,
+            command.cooldown || 2
+          );
+          
+          if (isLimited) {
+            return await interaction.reply({
+              content: `❌ Please wait ${remainingTime} more seconds before using this command again.`,
+              ephemeral: true
+            });
+          }
+          
           await command.execute(interaction);
         } else {
           await interaction.reply({ 

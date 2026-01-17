@@ -1,6 +1,7 @@
 const CommandBase = require('../../classes/CommandBase');
 const { version } = require('../../package.json');
 const os = require('os');
+const djs = require('discord.js');
 
 class Info extends CommandBase {
   constructor(client) {
@@ -41,10 +42,10 @@ class Info extends CommandBase {
       // Get CPU load (from stats.js)
       const cpuLoad = os.loadavg();
       
-      // Get server count and additional stats from stats.js
+      // Get server count and additional stats
       const serverCount = this.client.guilds.cache.size;
-      const userCount = this.client.users.cache.size;
       const channelCount = this.client.channels.cache.size;
+
       
       // Create embed
       const infoEmbed = {
@@ -59,7 +60,6 @@ class Info extends CommandBase {
             name: "Bot Stats",
             value: [
               `**Servers:** ${serverCount}`,
-              `**Users:** ${userCount}`,
               `**Channels:** ${channelCount}`,
               `**Commands:** ${this.client.application.commands.cache.size || "Loading..."}`,
               `**Bot Uptime:** ${botUptimeString}`

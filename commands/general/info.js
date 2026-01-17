@@ -14,6 +14,18 @@ class Info extends CommandBase {
     try {
       await this.deferReply(interaction);
       
+      // Fetch commands if not already cached
+      let commandCount = this.client.application.commands.cache.size;
+      if (commandCount === 0) {
+        try {
+          await this.client.application.commands.fetch();
+          commandCount = this.client.application.commands.cache.size;
+        } catch (error) {
+          console.error('Failed to fetch commands:', error);
+          commandCount = 0;
+        }
+      }
+      
       // Calculate bot uptime
       const botUptime = process.uptime();
       const botDays = Math.floor(botUptime / 86400);
@@ -61,7 +73,7 @@ class Info extends CommandBase {
             value: [
               `**Servers:** ${serverCount}`,
               `**Channels:** ${channelCount}`,
-              `**Commands:** ${this.client.application.commands.cache.size || "Loading..."}`,
+              `**Commands:** ${commandCount}`,
               `**Bot Uptime:** ${botUptimeString}`
             ].join('\n'),
             inline: true

@@ -1,4 +1,12 @@
 {
+  "pnpm": {
+    "allowedScripts": [
+      "ffmpeg-static"
+    ],
+    "onlyBuiltDependencies": [
+      "ffmpeg-static"
+    ]
+  },
   "dependencies": {
     "axios": "^1.8.4",
     "discord.js": "^14.18.0",

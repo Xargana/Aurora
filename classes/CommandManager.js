@@ -378,6 +378,146 @@ class CommandManager {
             global.deferredTempDirs.forEach(dir => cleanupTempDir(dir));
             global.deferredTempDirs = [];
           }
+        } else if (interaction.commandName === "Convert to GIF (rename)") {
+          const message = interaction.targetMessage;
+          
+          // Check if message has attachments
+          if (message.attachments.size === 0) {
+            return await interaction.reply({
+              content: "This message has no attachments to convert.",
+              ephemeral: true
+            });
+          }
+          
+          // Get the gif command
+          const gifCommand = this.commands.get('gif');
+          if (!gifCommand) {
+            return await interaction.reply({
+              content: "GIF command not found.",
+              ephemeral: true
+            });
+          }
+          
+          // Defer the actual interaction
+          await interaction.deferReply();
+          
+          // Mark this as a batch conversion so gif command defers cleanup
+          interaction._isBatchConversion = true;
+          
+          // Convert all attachments with rename-only enabled
+          const attachments = Array.from(message.attachments.values());
+          const results = [];
+          const files = [];
+          
+          for (const attachment of attachments) {
+            try {
+              // Create interaction options wrapper for each attachment
+              const mockInteraction = {
+                options: {
+                  getAttachment: (name) => name === 'file' ? attachment : null,
+                  getString: () => null,
+                  getBoolean: (name) => name === 'rename-only' ? true : false  // Enable rename-only
+                },
+                deferred: true,
+                replied: false,
+                deferReply: (opts) => Promise.resolve(),
+                editReply: async (opts) => {
+                  // Collect files from the response - read into buffers for batch mode
+                  if (opts.files) {
+                    for (const file of opts.files) {
+                      try {
+                        // Read file into buffer if it's an AttachmentBuilder with a file path
+                        if (file.attachment && typeof file.attachment === 'string') {
+                          const fileBuffer = await require('fs').promises.readFile(file.attachment);
+                          const newAttachment = new (require('discord.js').AttachmentBuilder)(fileBuffer, { name: file.name });
+                          files.push(newAttachment);
+                        } else {
+                          files.push(file);
+                        }
+                      } catch (err) {
+                        console.error(`Error reading file for batch: ${err.message}`);
+                        files.push(file);
+                      }
+                    }
+                  }
+                  results.push({ 
+                    name: attachment.name || attachment.filename, 
+                    success: true,
+                    message: opts.content 
+                  });
+                  return Promise.resolve();
+                },
+                reply: (opts) => Promise.resolve(),
+                user: interaction.user,
+                channel: interaction.channel
+              };
+              
+              // Override sendErrorResponse to collect errors
+              mockInteraction.sendErrorResponse = async (itr, errorMessage) => {
+                results.push({ 
+                  name: attachment.name || attachment.filename, 
+                  success: false, 
+                  error: errorMessage 
+                });
+              };
+              
+              await gifCommand.execute(mockInteraction);
+            } catch (error) {
+              console.error(`Error converting ${attachment.name || attachment.filename}:`, error);
+              results.push({ name: attachment.name || attachment.filename, success: false, error: error.message });
+            }
+          }
+          
+          // Build final summary message
+          const successful = results.filter(r => r.success).length;
+          const failed = results.filter(r => !r.success).length;
+          
+          let summaryContent = `✅ Converted ${successful}/${attachments.length} files (renamed)\n`;
+          
+          // Add details for each successful conversion
+          results.filter(r => r.success).forEach(r => {
+            summaryContent += `\n📄 **${r.name}**\n${r.message}`;
+          });
+          
+          if (failed > 0) {
+            summaryContent += `\n\n❌ Failed (${failed}):`;
+            results.filter(r => !r.success).forEach(r => {
+              summaryContent += `\n  • ${r.name}: ${r.error}`;
+            });
+          }
+          
+          // Send summary with all files at once
+          await interaction.editReply({
+            content: summaryContent,
+            files: files
+          });
+          
+          // Clean up deferred temp directories after sending
+          if (global.deferredTempDirs && global.deferredTempDirs.length > 0) {
+            const fs = require('fs');
+            const path = require('path');
+            
+            const cleanupTempDir = (dirPath) => {
+              try {
+                if (fs.existsSync(dirPath)) {
+                  fs.readdirSync(dirPath).forEach((file) => {
+                    const filePath = path.join(dirPath, file);
+                    if (fs.lstatSync(filePath).isDirectory()) {
+                      cleanupTempDir(filePath);
+                    } else {
+                      fs.unlinkSync(filePath);
+                    }
+                  });
+                  fs.rmdirSync(dirPath);
+                }
+              } catch (error) {
+                console.error(`Error cleaning up temp directory: ${error.message}`);
+              }
+            };
+            
+            global.deferredTempDirs.forEach(dir => cleanupTempDir(dir));
+            global.deferredTempDirs = [];
+          }
         }
       }
     } catch (error) {

@@ -726,6 +726,12 @@ const messageCommands = [
     integration_types: [1],
     contexts: [0, 1, 2],
   },
+  {
+    name: "Convert to GIF (rename)",
+    type: ApplicationCommandType.Message,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+  },
 ];
 
 module.exports = {

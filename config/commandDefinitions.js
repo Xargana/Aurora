@@ -699,6 +699,22 @@ const globalCommands = [
         required: false
       }
     ]
+  },
+  {
+    name: "worsethanepstein",
+    description: "worse than epstein",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+    {
+      name: "user",
+      description: "User to put on the image",
+      type: 6, // USER
+      required: true
+    },
+    ]
   }
 ];
 

@@ -10,9 +10,18 @@ class CommandManager {
     this.globalCommands = [];
     this.guildCommands = [];
     this.userCommands = [];
+    this.messageCommands = [];
     
     // Load all commands
     this.loadCommands();
+  }
+  
+  /**
+   * Check if running in development mode
+   * @returns {boolean} - True if DEV environment is set
+   */
+  isDev() {
+    return process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true';
   }
   
   loadCommands() {
@@ -79,15 +88,19 @@ class CommandManager {
       return;
     }
 
-    const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+    // Determine which token/client ID to use
+    const useDevConfig = this.isDev() && process.env.DEV_TOKEN && process.env.DEV_CLIENT_ID;
+    const token = useDevConfig ? process.env.DEV_TOKEN : process.env.DISCORD_TOKEN;
+    const clientId = useDevConfig ? process.env.DEV_CLIENT_ID : process.env.CLIENT_ID;
+    const rest = new REST({ version: "10" }).setToken(token);
 
     try {
-      console.log("Starting command registration...");
+      console.log(`Starting command registration in ${useDevConfig ? 'DEV' : 'PROD'} mode...`);
 
       // First, get all existing global commands to check for entry point commands
       const existingGlobalCommands = await this.getExistingCommands(
         rest, 
-        Routes.applicationCommands(process.env.CLIENT_ID)
+        Routes.applicationCommands(clientId)
       );
       
       // Find any entry point or special commands we need to preserve
@@ -145,10 +158,10 @@ class CommandManager {
       
       // Update global commands (including DM-compatible commands)
       await rest.put(
-        Routes.applicationCommands(process.env.CLIENT_ID), 
+        Routes.applicationCommands(clientId), 
         { body: allGlobalCommands }
       );
-      console.log(`Successfully registered ${allGlobalCommands.length} global commands`);
+      console.log(`Successfully registered ${allGlobalCommands.length} global commands to ${useDevConfig ? 'DEV' : 'PROD'} application`);
       
       // If we have guild-specific commands, register them for each guild
       if (this.guildCommands.length > 0) {
@@ -179,10 +192,15 @@ class CommandManager {
     
     try {
       console.log(`Registering guild commands for ${guild.name} (${guild.id})...`);
-      const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+      
+      // Use dev credentials if both DEV_TOKEN and DEV_CLIENT_ID are set
+      const useDevConfig = this.isDev() && process.env.DEV_TOKEN && process.env.DEV_CLIENT_ID;
+      const token = useDevConfig ? process.env.DEV_TOKEN : process.env.DISCORD_TOKEN;
+      const clientId = useDevConfig ? process.env.DEV_CLIENT_ID : process.env.CLIENT_ID;
+      const rest = new REST({ version: "10" }).setToken(token);
       
       await rest.put(
-        Routes.applicationGuildCommands(process.env.CLIENT_ID, guild.id),
+        Routes.applicationGuildCommands(clientId, guild.id),
         { body: this.guildCommands }
       );
       console.log(`Successfully registered ${this.guildCommands.length} guild commands for ${guild.name}`);

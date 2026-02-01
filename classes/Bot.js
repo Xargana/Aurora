@@ -133,9 +133,13 @@ class Bot {
     });
   }
   
+  isDev() {
+    return process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true';
+  }
+
   async sendStartupNotification() {
     // Skip notifications in dev environment
-    if (process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true') {
+    if (this.isDev()) {
       console.log('Dev environment detected, skipping startup notification');
       return;
     }
@@ -238,10 +242,9 @@ class Bot {
     }
   }
 
-  // Add this new method to the Bot class
   async sendShutdownNotification(reason, error = null) {
     // Skip notifications in dev environment
-    if (process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true') {
+    if (this.isDev()) {
       console.log('Dev environment detected, skipping shutdown notification');
       return;
     }
@@ -321,7 +324,12 @@ class Bot {
   
   async start() {
     // Login to Discord
-    await this.client.login(process.env.DISCORD_TOKEN);
+    if (process.env.ENVIRONMENT === "dev" || process.env.DEV === 'true') {
+      await this.client.login(process.env.DEV_TOKEN);
+    } else {
+      await this.client.login(process.env.DISCORD_TOKEN);
+    }
+    
     return this;
   }
 }

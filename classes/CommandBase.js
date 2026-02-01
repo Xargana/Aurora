@@ -11,6 +11,14 @@ class CommandBase {
   }
   
   /**
+   * Check if running in development mode
+   * @returns {boolean} - True if DEV environment is set
+   */
+  isDev() {
+    return process.env.ENVIRONMENT === 'dev' || process.env.DEV === 'true';
+  }
+  
+  /**
    * Execute the command
    * @param {Interaction} interaction - The Discord interaction
    */

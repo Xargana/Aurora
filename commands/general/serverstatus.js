@@ -1,5 +1,6 @@
 const CommandBase = require('../../classes/CommandBase');
 const axios = require('axios');
+const { AttachmentBuilder } = require('discord.js');
 
 class ServerStatus extends CommandBase {
   constructor(client) {
@@ -16,56 +17,83 @@ class ServerStatus extends CommandBase {
       const response = await axios.get("https://xargana.tr:2589/status");
       
       if (isRaw) {
-        await this.sendResponse(interaction, {
-          content: `\`\`\`json\n${JSON.stringify(response.data, null, 2)}\n\`\`\``
-        });
+        const jsonString = JSON.stringify(response.data, null, 2);
+        const MAX_CONTENT_LENGTH = 1900; // Discord message limit is 2000, leave buffer
+        
+        if (jsonString.length > MAX_CONTENT_LENGTH) {
+          // Create a text file attachment
+          const attachment = new AttachmentBuilder(Buffer.from(jsonString), { name: 'status.json' });
+          await this.sendResponse(interaction, {
+            content: "Status data is too large, sending as file:",
+            files: [attachment]
+          });
+        } else {
+          await this.sendResponse(interaction, {
+            content: `\`\`\`json\n${jsonString}\n\`\`\``
+          });
+        }
         return;
       }
       
-      // Handle the new API format (with servers and pm2Services)
-      const serversData = response.data.servers || response.data; // Support both formats
+      // Handle the new API format (with monitors and pm2Services)
+      const monitorsData = response.data.monitors || {};
       const pm2ServicesData = response.data.pm2Services || {};
+      const monitorFailureCounts = response.data.monitorFailureCounts || {};
+      const pm2FailureCounts = response.data.pm2FailureCounts || {};
       
       const fields = [];
       
-      // Add local server section if it exists
-      if (serversData["xargana.tr"]) {
-        const localServer = serversData["xargana.tr"];
-        const status = localServer.online ? "🟢 Online" : "🔴 Offline";
-        const responseTime = localServer.responseTime 
-          ? (localServer.responseTime === "unknown" || typeof localServer.responseTime !== "number"
-             ? "Unknown" 
-             : `${localServer.responseTime.toFixed(2)}ms`)
-          : "Timed out";
-        
-        fields.push({
-          name: "📍 Local Server",
-          value: `Status: ${status}\nResponse Time: ${responseTime}`,
-          inline: false
-        });
+      // Helper function to get status emoji
+      const getStatusEmoji = (status) => {
+        switch(status) {
+          case 'up': return "🟢";
+          case 'down': return "🔴";
+          case 'unknown': return "🟡";
+          default: return "⚪";
+        }
+      };
+      
+      // Group monitors by parent
+      const groupedMonitors = {};
+      
+      for (const [id, monitor] of Object.entries(monitorsData)) {
+        const parentId = monitor.parentId ? monitor.parentId.toString() : "root";
+        if (!groupedMonitors[parentId]) {
+          groupedMonitors[parentId] = [];
+        }
+        groupedMonitors[parentId].push(monitor);
       }
       
-      // Add remote servers section
-      const remoteServers = Object.entries(serversData).filter(([server]) => server !== "xargana.tr");
-      
-      if (remoteServers.length > 0) {
-        fields.push({
-          name: "🌐 Remote Servers",
-          value: "\u200B", // Zero-width space
-          inline: false
-        });
+      // Display monitors grouped by parent
+      for (const [parentId, monitors] of Object.entries(groupedMonitors)) {
+        // Add parent name as section header (only if it's a group type)
+        const parentName = parentId === "root" ? "All Services" : 
+          (monitorsData[parentId]?.name || `Group ${parentId}`);
         
-        for (const [server, data] of remoteServers) {
-          const status = data.online ? "🟢 Online" : "🔴 Offline";
-          const responseTime = data.responseTime 
-            ? (data.responseTime === "unknown" || typeof data.responseTime !== "number"
-               ? "Unknown" 
-               : `${data.responseTime.toFixed(2)}ms`)
-            : "Timed out";
+        // Only add parent header if parent is a group type or root
+        if (parentId === "root" || monitorsData[parentId]?.type === "group") {
+          fields.push({
+            name: parentName,
+            value: "\u200B",
+            inline: false
+          });
+        }
+        
+        // Display all monitors in this group as inline fields
+        for (const monitor of monitors) {
+          const status = `${getStatusEmoji(monitor.status)} ${monitor.status.toUpperCase()}`;
+          const responseTime = monitor.responseTime ? `${monitor.responseTime}ms` : "N/A";
+          const uptime = monitor.uptime24h || "N/A";
+          const failureCount = monitorFailureCounts[monitor.id] || 0;
+          
+          let value = `Status: ${status}\nResponse Time: ${responseTime}\nUptime (24h): ${uptime}`;
+          if (failureCount > 0) {
+            value += `\nFailures: ${failureCount}`;
+          }
           
           fields.push({
-            name: server,
-            value: `Status: ${status}\nResponse Time: ${responseTime}`,
+            name: `${monitor.name} (${monitor.type})`,
+            value: value,
             inline: true
           });
         }
@@ -74,41 +102,32 @@ class ServerStatus extends CommandBase {
       // Add PM2 services section if available
       if (Object.keys(pm2ServicesData).length > 0) {
         // Add a separator
-        if (fields.length > 0) {
-          fields.push({
-            name: "\u200B",
-            value: "\u200B",
-            inline: false
-          });
-        }
+        fields.push({
+          name: "\u200B",
+          value: "\u200B",
+          inline: false
+        });
         
         fields.push({
-          name: "⚙️ PM2 Services",
-          value: "\u200B", // Zero-width space
+          name: "PM2 Services",
+          value: "\u200B",
           inline: false
         });
         
         for (const [service, data] of Object.entries(pm2ServicesData)) {
           const status = data.status === 'online' ? "🟢 Online" : "🔴 Offline";
           const memory = data.memory ? `${(data.memory / (1024 * 1024)).toFixed(1)} MB` : "N/A";
+          const cpu = data.cpu ? `${data.cpu.toFixed(1)}%` : "N/A";
+          const failureCount = pm2FailureCounts[service] || 0;
           
-          // Format uptime
-          let uptime = "N/A";
-          if (data.uptime) {
-            const seconds = Math.floor(data.uptime / 1000);
-            const days = Math.floor(seconds / 86400);
-            const hours = Math.floor((seconds % 86400) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            
-            uptime = '';
-            if (days > 0) uptime += `${days}d `;
-            if (hours > 0 || days > 0) uptime += `${hours}h `;
-            uptime += `${minutes}m`;
+          let value = `Status: ${status}\nCPU: ${cpu}\nMemory: ${memory}\nRestarts: ${data.restarts || 0}`;
+          if (failureCount > 0) {
+            value += `\nFailures: ${failureCount}`;
           }
           
           fields.push({
             name: data.name || service,
-            value: `Status: ${status}\nMemory: ${memory}\nUptime: ${uptime}\nRestarts: ${data.restarts || 0}`,
+            value: value,
             inline: true
           });
         }
@@ -118,7 +137,7 @@ class ServerStatus extends CommandBase {
       if (fields.length === 0) {
         fields.push({
           name: "No Data",
-          value: "No server or service data available",
+          value: "No monitor or service data available",
           inline: false
         });
       }

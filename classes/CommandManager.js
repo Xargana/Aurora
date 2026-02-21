@@ -211,6 +211,84 @@ class CommandManager {
   
   async handleInteraction(interaction) {
     try {
+      if (interaction.isModalSubmit()) {
+        // Handle modal submissions
+        if (interaction.customId === 'rename_file_modal') {
+          const newFileName = interaction.fields.getTextInputValue('file_name_input');
+          
+          if (!newFileName) {
+            return await interaction.reply({
+              content: "❌ Please provide a file name.",
+              ephemeral: true
+            });
+          }
+          
+          // Defer the reply
+          await interaction.deferReply();
+          
+          try {
+            const axios = require('axios');
+            const { AttachmentBuilder } = require('discord.js');
+            
+            // Initialize pendingRenames map if needed
+            if (!this.pendingRenames) {
+              this.pendingRenames = new Map();
+            }
+            
+            // Check if we have pending rename data for this user
+            const userId = interaction.user.id;
+            const renameData = this.pendingRenames.get(userId);
+            
+            if (!renameData) {
+              return await interaction.editReply({
+                content: "❌ Rename session expired. Please try again."
+              });
+            }
+            
+            // Remove the stored data
+            this.pendingRenames.delete(userId);
+            
+            const renamedAttachments = [];
+            
+            for (const attachment of renameData.attachments) {
+              try {
+                // Download the file
+                const response = await axios.get(attachment.url, { responseType: 'arraybuffer' });
+                const originalName = attachment.name || attachment.filename;
+                const ext = originalName.includes('.') 
+                  ? originalName.substring(originalName.lastIndexOf('.'))
+                  : '';
+                
+                const finalName = newFileName + ext;
+                
+                // Create a new attachment with the renamed file
+                const newAttachment = new AttachmentBuilder(response.data, { name: finalName });
+                renamedAttachments.push(newAttachment);
+              } catch (err) {
+                console.error(`Error processing attachment: ${err.message}`);
+              }
+            }
+            
+            if (renamedAttachments.length === 0) {
+              return await interaction.editReply({
+                content: "❌ Failed to process attachments."
+              });
+            }
+            
+            await interaction.editReply({
+              content: `✅ Renamed ${renamedAttachments.length} file(s) to **${newFileName}***`,
+              files: renamedAttachments
+            });
+          } catch (error) {
+            console.error(`Error in rename modal submission: ${error.message}`);
+            await interaction.editReply({
+              content: `❌ Failed to rename file: ${error.message}`
+            });
+          }
+        }
+        return;
+      }
+      
       if (interaction.isChatInputCommand()) {
         const command = this.commands.get(interaction.commandName);
         if (command) {
@@ -396,8 +474,52 @@ class CommandManager {
             global.deferredTempDirs.forEach(dir => cleanupTempDir(dir));
             global.deferredTempDirs = [];
           }
-        } else if (interaction.commandName === "Convert to GIF (rename)") {
+        } else if (interaction.commandName === "Rename File") {
           const message = interaction.targetMessage;
+          
+          // Check if message has attachments
+          if (message.attachments.size === 0) {
+            return await interaction.reply({
+              content: "This message has no attachments to rename.",
+              ephemeral: true
+            });
+          }
+          
+          // Create a modal for renaming
+          const { TextInputBuilder, ModalBuilder, TextInputStyle } = require('discord.js');
+          
+          const modal = new ModalBuilder()
+            .setCustomId('rename_file_modal')
+            .setTitle('Rename File');
+          
+          const fileNameInput = new TextInputBuilder()
+            .setCustomId('file_name_input')
+            .setLabel('New file name (without extension)')
+            .setStyle(TextInputStyle.Short)
+            .setMaxLength(100);
+          
+          const actionRow = new (require('discord.js')).ActionRowBuilder().addComponents(fileNameInput);
+          modal.addComponents(actionRow);
+          
+          // Store attachment data using a Map keyed by user ID
+          if (!this.pendingRenames) {
+            this.pendingRenames = new Map();
+          }
+          
+          this.pendingRenames.set(interaction.user.id, {
+            attachments: Array.from(message.attachments.values()),
+            timestamp: Date.now()
+          });
+          
+          // Clean up old entries after 5 minutes
+          setTimeout(() => {
+            this.pendingRenames.delete(interaction.user.id);
+          }, 5 * 60 * 1000);
+          
+          await interaction.showModal(modal);
+          return;
+        } else if (interaction.commandName === "Convert to GIF (rename)") {
+           const message = interaction.targetMessage;
           
           // Check if message has attachments
           if (message.attachments.size === 0) {

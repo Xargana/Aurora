@@ -715,6 +715,34 @@ const globalCommands = [
       required: true
     },
     ]
+  },
+  {
+    name: "rename",
+    description: "Rename a file by uploading or providing a link",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "newname",
+        description: "The new name for the file (without extension)",
+        type: ApplicationCommandOptionType.String,
+        required: true
+      },
+      {
+        name: "file",
+        description: "The file to rename (upload)",
+        type: ApplicationCommandOptionType.Attachment,
+        required: false
+      },
+      {
+        name: "url",
+        description: "URL to a file to rename",
+        type: ApplicationCommandOptionType.String,
+        required: false
+      }
+    ]
   }
 ];
 
@@ -744,6 +772,12 @@ const messageCommands = [
   },
   {
     name: "Convert to GIF (rename)",
+    type: ApplicationCommandType.Message,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+  },
+  {
+    name: "Rename File",
     type: ApplicationCommandType.Message,
     integration_types: [1],
     contexts: [0, 1, 2],

@@ -297,7 +297,7 @@ class Gif extends CommandBase {
       if (isVideo) {
         // Video to GIF: reduce framerate, scale, optimize colors
         command = command
-          .outputOptions('-vf', 'fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=256[p];[s1][p]paletteuse=dither=bayer')
+          .outputOptions('-vf', 'fps=24,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=none:diff_mode=rectangle')
           .outputOptions('-loop', '0');
       } else {
         // Image to GIF: scale and optimize colors

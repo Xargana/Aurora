@@ -209,8 +209,38 @@ class CommandManager {
     }
   }
   
+  isBlacklisted(userId) {
+    const fs = require('fs');
+    const path = require('path');
+    const blacklistPath = path.join(__dirname, '../gulag.txt');
+    
+    if (!fs.existsSync(blacklistPath)) {
+      return false;
+    }
+    
+    const blacklistedIds = fs.readFileSync(blacklistPath, 'utf-8')
+      .trim()
+      .split('\n')
+      .filter(id => id);
+    
+    return blacklistedIds.includes(userId);
+  }
+
   async handleInteraction(interaction) {
     try {
+      // Check if user is blacklisted (unless command is whitelisted)
+      if (interaction.isChatInputCommand()) {
+        const commandName = interaction.commandName;
+        const whitelistedCommands = ['blacklist']; // Commands blacklisted users can still use
+        
+        if (this.isBlacklisted(interaction.user.id) && !whitelistedCommands.includes(commandName)) {
+          return await interaction.reply({
+            content: "❌ You are blacklisted and cannot use this command.",
+            ephemeral: true
+          });
+        }
+      }
+
       if (interaction.isModalSubmit()) {
         // Handle modal submissions
         if (interaction.customId === 'rename_file_modal') {

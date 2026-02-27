@@ -1,4 +1,5 @@
 const { ApplicationCommandOptionType, ApplicationCommandType } = require("discord.js");
+const { integrations } = require("googleapis/build/src/apis/integrations");
 
 // Commands that should work in DMs (registered globally)
 const globalCommands = [
@@ -743,6 +744,50 @@ const globalCommands = [
         required: false
       }
     ]
+  },
+  {
+    name: "gulag",
+    description: "Manage the gulag (blacklist)",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+      {
+        name: "add",
+        description: "Add a user to the gulag",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: "user",
+            description: "The user to send to the gulag",
+            type: 6, //user
+            required: true
+          }
+        ]
+      },
+      {
+        name: "remove",
+        description: "Remove a user from the gulag",
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: "user",
+            description: "The user to remove from the gulag",
+            type: 6, //user
+            required: true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    name: "blacklist",
+    description: "List all blacklisted users",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
   }
 ];
 

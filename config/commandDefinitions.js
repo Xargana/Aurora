@@ -1,5 +1,4 @@
 const { ApplicationCommandOptionType, ApplicationCommandType } = require("discord.js");
-const { integrations } = require("googleapis/build/src/apis/integrations");
 
 // Commands that should work in DMs (registered globally)
 const globalCommands = [
@@ -19,7 +18,6 @@ const globalCommands = [
       },
     ],
   },
-  // Add this to the globalCommands array in config/commandDefinitions.js
   {
     name: "uuid",
     description: "Generate a UUID (Universally Unique Identifier)",
@@ -59,7 +57,7 @@ const globalCommands = [
       {
         name: 'query',
         description: 'What you want to search for',
-        type: 3, // STRING type
+        type: ApplicationCommandOptionType.String,
         required: true
       }
     ]
@@ -94,22 +92,6 @@ const globalCommands = [
         type: ApplicationCommandOptionType.Boolean,
         required: false,
       },
-    ],
-  },
-  {
-    name: "cody",
-    description: "Ask Cody (Sourcegraph AI) a coding question",
-    type: ApplicationCommandType.ChatInput,
-    dm_permission: true,
-    integration_types: [1],
-    contexts: [0, 1, 2],
-    options: [
-      {
-        name: "question",
-        description: "Your coding question",
-        type: ApplicationCommandOptionType.String,
-        required: true,
-      }
     ],
   },
   {
@@ -173,29 +155,6 @@ const globalCommands = [
           { name: "Red Panda", value: "red_panda" },
           { name: "Raccoon", value: "raccoon" },
           { name: "Kangaroo", value: "kangaroo" }
-        ]
-      },
-    ],
-  },
-  {
-    name: "anime",
-    description: "Get anime-related content",
-    type: ApplicationCommandType.ChatInput,
-    dm_permission: true,
-    integration_types: [1],
-    contexts: [0, 1, 2],
-    options: [
-      {
-        name: "type",
-        description: "Type of anime content",
-        type: ApplicationCommandOptionType.String,
-        required: true,
-        choices: [
-          { name: "Wink", value: "wink" },
-          { name: "Pat", value: "pat" },
-          { name: "Hug", value: "hug" },
-          { name: "Face Palm", value: "face-palm" },
-          { name: "Quote", value: "quote" }
         ]
       },
     ],
@@ -592,88 +551,6 @@ const globalCommands = [
     ]
   },
   {
-    name: "dictionary",
-    description: "Look up a word definition",
-    type: ApplicationCommandType.ChatInput,
-    dm_permission: true,
-    integration_types: [1],
-    contexts: [0, 1, 2],
-    options: [
-      {
-        name: "word",
-        description: "The word to look up",
-        type: ApplicationCommandOptionType.String,
-        required: true
-      },
-      {
-        name: "language",
-        description: "Dictionary language (default: English)",
-        type: ApplicationCommandOptionType.String,
-        required: false,
-        choices: [
-          { name: "English", value: "en" },
-          { name: "Spanish", value: "es" },
-          { name: "French", value: "fr" },
-          { name: "German", value: "de" },
-          { name: "Italian", value: "it" }
-        ]
-      }
-    ]
-  },
-  {
-    name: "translate",
-    description: "Translate text between languages",
-    type: ApplicationCommandType.ChatInput,
-    dm_permission: true,
-    integration_types: [1],
-    contexts: [0, 1, 2],
-    options: [
-      {
-        name: "text",
-        description: "The text to translate",
-        type: ApplicationCommandOptionType.String,
-        required: true
-      },
-      {
-        name: "to",
-        description: "Target language",
-        type: ApplicationCommandOptionType.String,
-        required: true,
-        choices: [
-          { name: "English", value: "en" },
-          { name: "Spanish", value: "es" },
-          { name: "French", value: "fr" },
-          { name: "German", value: "de" },
-          { name: "Italian", value: "it" },
-          { name: "Japanese", value: "ja" },
-          { name: "Russian", value: "ru" },
-          { name: "Chinese", value: "zh" },
-          { name: "Arabic", value: "ar" },
-          { name: "Turkish", value: "tr" }
-        ]
-      },
-      {
-        name: "from",
-        description: "Source language (auto-detect if not specified)",
-        type: ApplicationCommandOptionType.String,
-        required: false,
-        choices: [
-          { name: "Auto-detect", value: "auto" },
-          { name: "English", value: "en" },
-          { name: "Spanish", value: "es" },
-          { name: "French", value: "fr" },
-          { name: "German", value: "de" },
-          { name: "Italian", value: "it" },
-          { name: "Japanese", value: "ja" },
-          { name: "Russian", value: "ru" },
-          { name: "Chinese", value: "zh" },
-          { name: "Arabic", value: "ar" },
-          { name: "Turkish", value: "tr" }
-        ]
-      }
-    ]
-  },
-  {
     name: "gif",
     description: "Convert images or videos to GIF format using ffmpeg",
     type: ApplicationCommandType.ChatInput,
@@ -704,6 +581,22 @@ const globalCommands = [
   {
     name: "worsethanepstein",
     description: "worse than epstein",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+    {
+      name: "user",
+      description: "User to put on the image",
+      type: 6, // USER
+      required: true
+    },
+    ]
+  },
+  {
+    name: "hesdone",
+    description: "he's so fucking done",
     type: ApplicationCommandType.ChatInput,
     dm_permission: true,
     integration_types: [1],

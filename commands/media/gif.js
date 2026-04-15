@@ -28,7 +28,7 @@ class Gif extends CommandBase {
       // Get attachment and options
       const attachment = interaction.options.getAttachment('file');
       const urlInput = interaction.options.getString('url');
-      const renameOnly = interaction.options.getBoolean('rename-only') || false;
+      const renameOnly = interaction.options.getBoolean('rename-only') || true;
 
       if (!attachment && !urlInput) {
         return await this.sendErrorResponse(interaction, 'Please provide either a file or a URL to convert.');
@@ -326,8 +326,16 @@ class Gif extends CommandBase {
     return new Promise((resolve, reject) => {
       const protocol = url.startsWith('https') ? https : http;
       const file = fs.createWriteStream(filePath);
+      
+      // Prepare headers
+      const headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      };
+      if (url.includes('discordapp.com')) {
+        headers['Referer'] = 'https://discord.com/';
+      }
 
-      protocol.get(url, (response) => {
+      protocol.get(url, { headers: headers }, (response) => {
         response.pipe(file);
         file.on('finish', () => {
           file.close();

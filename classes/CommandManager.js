@@ -279,11 +279,26 @@ class CommandManager {
             this.pendingRenames.delete(userId);
             
             const renamedAttachments = [];
+            const failedDownloads = [];
             
             for (const attachment of renameData.attachments) {
               try {
-                // Download the file
-                const response = await axios.get(attachment.url, { responseType: 'arraybuffer' });
+                // Download the file with proper headers
+                const headers = {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                };
+                
+                // Add Discord-specific headers for CDN URLs
+                if (attachment.url && attachment.url.includes('discordapp.com')) {
+                  headers['Referer'] = 'https://discord.com/';
+                }
+                
+                const response = await axios.get(attachment.url, { 
+                  responseType: 'arraybuffer',
+                  headers: headers,
+                  maxRedirects: 5,
+                  timeout: 30000
+                });
                 const originalName = attachment.name || attachment.filename;
                 const ext = originalName.includes('.') 
                   ? originalName.substring(originalName.lastIndexOf('.'))
@@ -295,18 +310,24 @@ class CommandManager {
                 const newAttachment = new AttachmentBuilder(response.data, { name: finalName });
                 renamedAttachments.push(newAttachment);
               } catch (err) {
-                console.error(`Error processing attachment: ${err.message}`);
+                console.error(`Error processing attachment (${attachment.url}): ${err.message}`);
+                failedDownloads.push(attachment.name || attachment.filename || attachment.url);
               }
             }
             
             if (renamedAttachments.length === 0) {
               return await interaction.editReply({
-                content: "❌ Failed to process attachments."
+                content: "❌ Failed to process any attachments. They may be expired or inaccessible."
               });
             }
             
+            let responseContent = `✅ Renamed ${renamedAttachments.length} file(s) to **${newFileName}***`;
+            if (failedDownloads.length > 0) {
+              responseContent += `\n⚠️ Failed to download ${failedDownloads.length} file(s): ${failedDownloads.join(', ')}`;
+            }
+            
             await interaction.editReply({
-              content: `✅ Renamed ${renamedAttachments.length} file(s) to **${newFileName}***`,
+              content: responseContent,
               files: renamedAttachments
             });
           } catch (error) {
@@ -367,10 +388,68 @@ class CommandManager {
         if (interaction.commandName === "Convert to GIF") {
           const message = interaction.targetMessage;
           
-          // Check if message has attachments
-          if (message.attachments.size === 0) {
+          // Collect attachments and URLs
+          const attachmentsToConvert = [];
+          const extractedUrls = new Set();
+          
+          // Add direct message attachments
+          if (message.attachments.size > 0) {
+            attachmentsToConvert.push(...Array.from(message.attachments.values()));
+          }
+          
+          // Extract URLs from message embeds (auto-embedded links)
+          if (message.embeds && message.embeds.length > 0) {
+            for (const embed of message.embeds) {
+              if (embed.image && embed.image.url) {
+                extractedUrls.add(embed.image.url);
+                attachmentsToConvert.push({
+                  url: embed.image.url,
+                  name: embed.image.url.split('/').pop().split('?')[0] || 'embedded_image',
+                  isUrl: true
+                });
+              }
+              if (embed.video && embed.video.url) {
+                extractedUrls.add(embed.video.url);
+                attachmentsToConvert.push({
+                  url: embed.video.url,
+                  name: embed.video.url.split('/').pop().split('?')[0] || 'embedded_video',
+                  isUrl: true
+                });
+              }
+              if (embed.thumbnail && embed.thumbnail.url) {
+                extractedUrls.add(embed.thumbnail.url);
+                attachmentsToConvert.push({
+                  url: embed.thumbnail.url,
+                  name: embed.thumbnail.url.split('/').pop().split('?')[0] || 'embedded_thumbnail',
+                  isUrl: true
+                });
+              }
+            }
+          }
+          
+          // Extract URLs from message content as fallback (skip duplicates from embeds)
+          const urlRegex = /(https?:\/\/[^\s<>]+)/g;
+          const matches = message.content.match(urlRegex) || [];
+          
+          for (const url of matches) {
+            const cleanUrl = url.replace(/[.,;:!?)}`'"]+$/, '');
+            const baseUrl = cleanUrl.split('?')[0];
+            
+            if (extractedUrls.has(cleanUrl) || Array.from(extractedUrls).some(u => u.startsWith(baseUrl))) {
+              continue;
+            }
+            
+            attachmentsToConvert.push({
+              url: cleanUrl,
+              name: cleanUrl.split('/').pop().split('?')[0] || 'file',
+              isUrl: true
+            });
+          }
+          
+          // Check if we found anything to convert
+          if (attachmentsToConvert.length === 0) {
             return await interaction.reply({
-              content: "This message has no attachments to convert.",
+              content: "This message has no attachments or file links to convert.",
               ephemeral: true
             });
           }
@@ -391,11 +470,10 @@ class CommandManager {
           interaction._isBatchConversion = true;
           
           // Convert all attachments
-          const attachments = Array.from(message.attachments.values());
           const results = [];
           const files = [];
           
-          for (const attachment of attachments) {
+          for (const attachment of attachmentsToConvert) {
             try {
               // Create interaction options wrapper for each attachment
               const mockInteraction = {
@@ -458,7 +536,7 @@ class CommandManager {
           const successful = results.filter(r => r.success).length;
           const failed = results.filter(r => !r.success).length;
           
-          let summaryContent = `Converted ${successful}/${attachments.length} files\n`;
+          let summaryContent = `Converted ${successful}/${attachmentsToConvert.length} files\n`;
           
           // Add details for each successful conversion
           results.filter(r => r.success).forEach(r => {
@@ -507,10 +585,72 @@ class CommandManager {
         } else if (interaction.commandName === "Rename File") {
           const message = interaction.targetMessage;
           
-          // Check if message has attachments
-          if (message.attachments.size === 0) {
+          // Collect attachments and URLs
+          const itemsToRename = [];
+          const extractedUrls = new Set(); // Track URLs to avoid duplicates
+          
+          // Add direct message attachments
+          if (message.attachments.size > 0) {
+            itemsToRename.push(...Array.from(message.attachments.values()));
+          }
+          
+          // Extract URLs from message embeds (auto-embedded links) - PRIORITY
+          if (message.embeds && message.embeds.length > 0) {
+            for (const embed of message.embeds) {
+              if (embed.image && embed.image.url) {
+                extractedUrls.add(embed.image.url);
+                itemsToRename.push({
+                  url: embed.image.url,
+                  name: embed.image.url.split('/').pop().split('?')[0] || 'embedded_image',
+                  isUrl: true
+                });
+              }
+              if (embed.video && embed.video.url) {
+                extractedUrls.add(embed.video.url);
+                itemsToRename.push({
+                  url: embed.video.url,
+                  name: embed.video.url.split('/').pop().split('?')[0] || 'embedded_video',
+                  isUrl: true
+                });
+              }
+              if (embed.thumbnail && embed.thumbnail.url) {
+                extractedUrls.add(embed.thumbnail.url);
+                itemsToRename.push({
+                  url: embed.thumbnail.url,
+                  name: embed.thumbnail.url.split('/').pop().split('?')[0] || 'embedded_thumbnail',
+                  isUrl: true
+                });
+              }
+            }
+          }
+          
+          // Extract URLs from message content as fallback (skip duplicates from embeds)
+          const urlRegex = /(https?:\/\/[^\s<>]+)/g;
+          const matches = message.content.match(urlRegex) || [];
+          
+          for (const url of matches) {
+            // Clean up the URL (remove trailing punctuation if any)
+            const cleanUrl = url.replace(/[.,;:!?)}`'"]+$/, '');
+            
+            // Extract base URL without query params for comparison
+            const baseUrl = cleanUrl.split('?')[0];
+            
+            // Skip if we already have this URL from embeds
+            if (extractedUrls.has(cleanUrl) || Array.from(extractedUrls).some(u => u.startsWith(baseUrl))) {
+              continue;
+            }
+            
+            itemsToRename.push({
+              url: cleanUrl,
+              name: cleanUrl.split('/').pop().split('?')[0] || 'file',
+              isUrl: true
+            });
+          }
+          
+          // Check if we found anything to rename
+          if (itemsToRename.length === 0) {
             return await interaction.reply({
-              content: "This message has no attachments to rename.",
+              content: "This message has no attachments or file links to rename.",
               ephemeral: true
             });
           }
@@ -537,7 +677,7 @@ class CommandManager {
           }
           
           this.pendingRenames.set(interaction.user.id, {
-            attachments: Array.from(message.attachments.values()),
+            attachments: itemsToRename,
             timestamp: Date.now()
           });
           
@@ -549,12 +689,70 @@ class CommandManager {
           await interaction.showModal(modal);
           return;
         } else if (interaction.commandName === "Convert to GIF (rename)") {
-           const message = interaction.targetMessage;
+          const message = interaction.targetMessage;
           
-          // Check if message has attachments
-          if (message.attachments.size === 0) {
+          // Collect attachments and URLs
+          const attachmentsToConvert = [];
+          const extractedUrls = new Set();
+          
+          // Add direct message attachments
+          if (message.attachments.size > 0) {
+            attachmentsToConvert.push(...Array.from(message.attachments.values()));
+          }
+          
+          // Extract URLs from message embeds (auto-embedded links)
+          if (message.embeds && message.embeds.length > 0) {
+            for (const embed of message.embeds) {
+              if (embed.image && embed.image.url) {
+                extractedUrls.add(embed.image.url);
+                attachmentsToConvert.push({
+                  url: embed.image.url,
+                  name: embed.image.url.split('/').pop().split('?')[0] || 'embedded_image',
+                  isUrl: true
+                });
+              }
+              if (embed.video && embed.video.url) {
+                extractedUrls.add(embed.video.url);
+                attachmentsToConvert.push({
+                  url: embed.video.url,
+                  name: embed.video.url.split('/').pop().split('?')[0] || 'embedded_video',
+                  isUrl: true
+                });
+              }
+              if (embed.thumbnail && embed.thumbnail.url) {
+                extractedUrls.add(embed.thumbnail.url);
+                attachmentsToConvert.push({
+                  url: embed.thumbnail.url,
+                  name: embed.thumbnail.url.split('/').pop().split('?')[0] || 'embedded_thumbnail',
+                  isUrl: true
+                });
+              }
+            }
+          }
+          
+          // Extract URLs from message content as fallback (skip duplicates from embeds)
+          const urlRegex = /(https?:\/\/[^\s<>]+)/g;
+          const matches = message.content.match(urlRegex) || [];
+          
+          for (const url of matches) {
+            const cleanUrl = url.replace(/[.,;:!?)}`'"]+$/, '');
+            const baseUrl = cleanUrl.split('?')[0];
+            
+            if (extractedUrls.has(cleanUrl) || Array.from(extractedUrls).some(u => u.startsWith(baseUrl))) {
+              continue;
+            }
+            
+            attachmentsToConvert.push({
+              url: cleanUrl,
+              name: cleanUrl.split('/').pop().split('?')[0] || 'file',
+              isUrl: true
+            });
+          }
+          
+          // Check if we found anything to convert
+          if (attachmentsToConvert.length === 0) {
             return await interaction.reply({
-              content: "This message has no attachments to convert.",
+              content: "This message has no attachments or file links to convert.",
               ephemeral: true
             });
           }
@@ -575,11 +773,10 @@ class CommandManager {
           interaction._isBatchConversion = true;
           
           // Convert all attachments with rename-only enabled
-          const attachments = Array.from(message.attachments.values());
           const results = [];
           const files = [];
           
-          for (const attachment of attachments) {
+          for (const attachment of attachmentsToConvert) {
             try {
               // Create interaction options wrapper for each attachment
               const mockInteraction = {
@@ -642,7 +839,7 @@ class CommandManager {
           const successful = results.filter(r => r.success).length;
           const failed = results.filter(r => !r.success).length;
           
-          let summaryContent = `✅ Converted ${successful}/${attachments.length} files (renamed)\n`;
+          let summaryContent = `✅ Converted ${successful}/${attachmentsToConvert.length} files (renamed)\n`;
           
           // Add details for each successful conversion
           results.filter(r => r.success).forEach(r => {

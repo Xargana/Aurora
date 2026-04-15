@@ -41,7 +41,18 @@ class Rename extends CommandBase {
       if (uploadedFile) {
         // Download the uploaded file
         try {
-          const response = await axios.get(uploadedFile.url, { responseType: 'arraybuffer' });
+          const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          };
+          if (uploadedFile.url && uploadedFile.url.includes('discordapp.com')) {
+            headers['Referer'] = 'https://discord.com/';
+          }
+          const response = await axios.get(uploadedFile.url, { 
+            responseType: 'arraybuffer',
+            headers: headers,
+            maxRedirects: 5,
+            timeout: 30000
+          });
           fileData = response.data;
           originalFileName = uploadedFile.name;
         } catch (error) {
@@ -51,7 +62,18 @@ class Rename extends CommandBase {
       } else if (url) {
         // Download from URL
         try {
-          const response = await axios.get(url, { responseType: 'arraybuffer' });
+          const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          };
+          if (url.includes('discordapp.com')) {
+            headers['Referer'] = 'https://discord.com/';
+          }
+          const response = await axios.get(url, { 
+            responseType: 'arraybuffer',
+            headers: headers,
+            maxRedirects: 5,
+            timeout: 30000
+          });
           fileData = response.data;
           // Extract filename from URL or use default
           originalFileName = url.split('/').pop()?.split('?')[0] || 'file';

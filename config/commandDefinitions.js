@@ -594,6 +594,28 @@ const globalCommands = [
     },
     ]
   },
+    {
+    name: "kidnap",
+    description: "syfm",
+    type: ApplicationCommandType.ChatInput,
+    dm_permission: true,
+    integration_types: [1],
+    contexts: [0, 1, 2],
+    options: [
+    {
+      name: "user",
+      description: "User to put on the image",
+      type: 6, // USER
+      required: false
+    },
+        {
+      name: "attachment",
+      description: "Attachment to put on the image",
+      type: ApplicationCommandOptionType.Attachment,
+      required: false
+    },
+    ]
+  },
   {
     name: "hesdone",
     description: "he's so fucking done",
